@@ -66,6 +66,6 @@ def login_edupage(edupage):
         print(f"✗ Vyskytla sa chyba: {e}")
         traceback.print_exc()
 
-def init_grade_analyzer(grades, month, year):
+def init_grade_analyzer(grades, month, year, student_id, subjects):
     from EdupageStats import EdupageStats
-    return EdupageStats(grades=grades, month=month, year=year)
+    return EdupageStats(grades=grades, month=month, year=year, student_id=student_id, subjects=subjects)

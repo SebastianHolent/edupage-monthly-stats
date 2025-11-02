@@ -11,7 +11,8 @@ def main():
         
         current_date = date.today()
         year = current_date.year
-        month = current_date.month
+        month = current_date.month - 1
+        student_id = edupage.get_user_id()
         
         print("Načítavam známky...")
         grades = edupage.get_grades()
@@ -21,10 +22,10 @@ def main():
         print(subjects)
         print(f"✓ Načítaných {len(subjects)} predmetov\n")
         
-        gradeanalyze = init_grade_analyzer(grades, month, year)
+        gradeanalyze = init_grade_analyzer(grades, month, year, student_id, subjects)
 
         gradeanalyze.print_totals()
-        
+        print(gradeanalyze.return_comparison_overview())
         
     except Exception as e:
         print(f"✗ Vyskytla sa chyba: {e}")
