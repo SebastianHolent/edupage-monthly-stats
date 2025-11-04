@@ -9,6 +9,14 @@ class EdupageStats():
         self.student_id = student_id
         self.subjects = subjects
         
+        # Calculate last month/year (handles year transition)
+        if self.month == 1:
+            self.last_month = 12
+            self.last_year = self.year - 1
+        else:
+            self.last_month = self.month - 1
+            self.last_year = self.year
+        
     def filter_by_last_month(self):
         filtered_months = []
         for g in self.grades:
@@ -24,8 +32,18 @@ class EdupageStats():
                 filtered_months.append(g)
         return filtered_months
     
-    def filter_by_subject(self, subject_name, month):
-        filtered_months = self.filter_by_custom_month(month)
+    def filter_by_month_year(self, month, year):
+        filtered = []
+        for g in self.grades:
+            if g.date.month == month and g.date.year == year:
+                filtered.append(g)
+        return filtered
+    
+    def filter_by_subject(self, subject_name, month, year=None):
+        if year is not None:
+            filtered_months = self.filter_by_month_year(month, year)
+        else:
+            filtered_months = self.filter_by_custom_month(month)
         filtered = []
         for g in filtered_months:
             if g.subject_name == subject_name:
@@ -137,10 +155,22 @@ class EdupageStats():
             counted_grades[i] += 1
             
         return counted_grades
-        
+    def distribute_grades_subject(self, month, subject):
+        grade_list = self.get_grade_list_only_int(month, subject)
+        counted_grades = {
+            1: 0,
+            2: 0,
+            3: 0,
+            4: 0,
+            5: 0,
+        }
+        for i in grade_list:
+            counted_grades[i] += 1
+            
+        return counted_grades
     def overall_distributed_grades(self):
         this_month_distribution = self.distribute_grades(self.month)
-        last_month_distribution = self.distribute_grades(self.month - 1)
+        last_month_distribution = self.distribute_grades(self.last_month)
         return {
             1: this_month_distribution[1] + last_month_distribution[1],
             2: this_month_distribution[2] + last_month_distribution[2],
@@ -223,7 +253,7 @@ class EdupageStats():
     
     def get_compared_subjects(self, subject):
         grades_this = self.get_subject_stats(subject, self.month)
-        grades_last = self.get_subject_stats(subject, self.month - 1)
+        grades_last = self.get_subject_stats(subject, self.last_month)
         return grades_last, grades_this
     
     def calculate_average_weighted(self, subject, month):
@@ -262,21 +292,21 @@ class EdupageStats():
             subject_stats[subject] = {
                 "counts": {
                   "counts": {
-                      "this_month": len(self.filter_by_subject(subject, self.month)),
-                      "last_month": len(self.filter_by_subject(subject, self.month - 1))
+                      "this_month": len(self.filter_by_subject(subject, self.month, self.year)),
+                      "last_month": len(self.filter_by_subject(subject, self.last_month, self.last_year))
                   },
                   "averages": {
-                      "last": self.calculate_average_grade(subject, self.month - 1),
+                      "last": self.calculate_average_grade(subject, self.last_month),
                       "this": self.calculate_average_grade(subject, self.month),
-                      "delta": self.calculate_average_delta_grade(subject, self.month, self.month - 1),
+                      "delta": self.calculate_average_delta_grade(subject, self.month, self.last_month),
                       "weighted_this": self.calculate_average_weighted(subject, self.month),
-                      "weighted_last": self.calculate_average_weighted(subject, self.month - 1),
+                      "weighted_last": self.calculate_average_weighted(subject, self.last_month),
                       "class_average_this": self.calculate_avg_subject(subject, self.month),
-                      "class_average_last": self.calculate_avg_subject(subject, self.month - 1),
+                      "class_average_last": self.calculate_avg_subject(subject, self.last_month),
                   },  
                  "distribution": {
-                     "distribution_this": self.distribute_grades(self.month),
-                     "distribution_this": self.distribute_grades(self.month - 1)
+                     "distribution_this": self.distribute_grades_subject(subject, self.month),
+                     "distribution_last": self.distribute_grades_subject(subject, self.last_month)
                     }
                  }
             }
@@ -291,21 +321,22 @@ class EdupageStats():
                     "student_name": get_username_split(),
                     "year_this": self.year,
                     "month_this": self.month,
-                    "last_month": self.month - 1,
+                    "year_last": self.last_year,
+                    "last_month": self.last_month,
                 },
                 "overall": {
                   "counts": {
                       "this_month": len(self.filter_by_custom_month(self.month)),
-                      "last_month": len(self.filter_by_custom_month(self.month - 1))
+                      "last_month": len(self.filter_by_custom_month(self.last_month))
                   },
                   "averages": {
-                      "last": self.calculate_overall_average_grade(self.month - 1),
+                      "last": self.calculate_overall_average_grade(self.last_month),
                       "this": self.calculate_overall_average_grade(self.month),
-                      "delta": self.calculate_overall_average_delta_grade(self.month, self.month - 1),
+                      "delta": self.calculate_overall_average_delta_grade(self.month, self.last_month),
                       "weighted_this": self.calculate_average_weighted_overall(self.month),
-                      "weighted_last": self.calculate_average_weighted_overall(self.month - 1),
+                      "weighted_last": self.calculate_average_weighted_overall(self.last_month),
                       "class_average_this": self.calculate_class_average(self.month),
-                      "class_average_last": self.calculate_class_average(self.month - 1),
+                      "class_average_last": self.calculate_class_average(self.last_month),
                   },  
                  "distribution": self.overall_distributed_grades(),
                 },
